@@ -803,6 +803,30 @@ test('buildURL - with camelized names', function() {
   }));
 });
 
+test('buildURL - with nested REST URLs', function() {
+  env.container.register('model:post', DS.Model.extend({
+    name: DS.attr(),
+    blog: DS.hasMany("comments")
+  }));
+
+  env.container.register('model:comment', DS.Model.extend({
+    body: DS.attr(),
+    post: DS.belongsTo("post")
+  }));
+
+  adapter.setProperties({
+    nestedUrls: {
+      comment: 'posts/:post_id/comments'
+    }
+  });
+
+  ajaxResponse({ comments: [{ id: 1 }] });
+
+  store.find('comment', { post_id: 1 }).then(async(function(post) {
+    equal(passedUrl, "/posts/1/comments");
+  }));
+});
+
 test('normalizeKey - to set up _ids and _id', function() {
   env.container.register('serializer:application', DS.RESTSerializer.extend({
     keyForAttribute: function(attr) {

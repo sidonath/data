@@ -1,40 +1,40 @@
 var get = Ember.get, set = Ember.set;
 
 DS.URLBuilder = Ember.Object.extend({
-  buildCreateURL: function(root, suffix) {
-    return this.buildURL(root, suffix);
+  buildCreateURL: function(type, id, recordOrData) {
+    return this.buildURL(type, id, recordOrData);
   },
 
-  buildUpdateURL: function(root, suffix, record) {
-    return this.buildURL(root, suffix, record);
+  buildUpdateURL: function(type, id, recordOrData) {
+    return this.buildURL(type, id, recordOrData);
   },
 
-  buildDeleteURL: function(root, suffix, record) {
-    return this.buildURL(root, suffix, record);
+  buildDeleteURL: function(type, id, recordOrData) {
+    return this.buildURL(type, id, recordOrData);
   },
 
-  buildFindURL: function(root, suffix) {
-    return this.buildURL(root, suffix);
+  buildFindURL: function(type, id, recordOrData) {
+    return this.buildURL(type, id, recordOrData);
   },
 
-  buildFindAllURL: function(root, suffix) {
-    return this.buildURL(root, suffix);
+  buildFindAllURL: function(type, id, recordOrData) {
+    return this.buildURL(type, id, recordOrData);
   },
 
-  buildFindQueryURL: function(root, suffix) {
-    return this.buildURL(root, suffix);
+  buildFindQueryURL: function(type, id, recordOrData) {
+    return this.buildURL(type, id, recordOrData);
   },
 
-  buildFindManyURL: function(root, suffix) {
-    return this.buildURL(root, suffix);
+  buildFindManyURL: function(type, id, recordOrData) {
+    return this.buildURL(type, id, recordOrData);
   },
 
-  buildFindHasManyURL: function(root, suffix, record) {
-    return this.buildURL(root, suffix, record);
+  buildFindHasManyURL: function(root, suffix, recordOrData) {
+    return this.buildURL(root, suffix, recordOrData);
   },
 
-  buildFindBelongsToURL: function(root, suffix, record) {
-    return this.buildURL(root, suffix, record);
+  buildFindBelongsToURL: function(root, suffix, recordOrData) {
+    return this.buildURL(root, suffix, recordOrData);
   },
 
   /**
@@ -51,13 +51,26 @@ DS.URLBuilder = Ember.Object.extend({
     @param {String} id
     @returns String
   */
-  buildURL: function(type, id) {
+  buildURL: function(type, id, recordOrData) {
     var adapter = get(this, 'adapter'),
         url = [],
         host = get(adapter, 'host'),
-        prefix = adapter.urlPrefix();
+        prefix = adapter.urlPrefix(),
+        urlMap = get(adapter, 'nestedUrls');
 
-    if (type) { url.push(adapter.pathForType(type)); }
+    if (urlMap && type && urlMap[type] && recordOrData) {
+      var recordUrlMap = urlMap[type],
+          modelUrl;
+
+      modelUrl = recordUrlMap.replace(/:(\w+)/g, function(match, id) {
+        return get(recordOrData, id);
+      });
+
+      url.push(modelUrl);
+    } else {
+      if (type) { url.push(adapter.pathForType(type)); }
+    }
+
     if (id) { url.push(id); }
 
     if (prefix) { url.unshift(prefix); }

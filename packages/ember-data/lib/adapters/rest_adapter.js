@@ -181,7 +181,7 @@ DS.RESTAdapter = DS.Adapter.extend({
     @returns Promise
   */
   findQuery: function(store, type, query) {
-    return this.ajax(get(this, 'urlBuilder').buildFindQueryURL(type.typeKey), "GET", { data: query });
+    return this.ajax(get(this, 'urlBuilder').buildFindQueryURL(type.typeKey, null, query), "GET", { data: query });
   },
 
   /**
@@ -320,7 +320,7 @@ DS.RESTAdapter = DS.Adapter.extend({
 
     serializer.serializeIntoHash(data, type, record, { includeId: true });
 
-    return this.ajax(get(this, 'urlBuilder').buildCreateURL(type.typeKey), "POST", { data: data });
+    return this.ajax(get(this, 'urlBuilder').buildCreateURL(type.typeKey, null, record), "POST", { data: data });
   },
 
   /**
@@ -371,8 +371,8 @@ DS.RESTAdapter = DS.Adapter.extend({
     return this.ajax(get(this, 'urlBuilder').buildDeleteURL(type.typeKey, id, record), "DELETE");
   },
 
-  buildURL: function(type, id) {
-    return get(this, 'urlBuilder').buildURL(type, id);
+  buildURL: function(type, id, recordOrData) {
+    return get(this, 'urlBuilder').buildURL(type, id, recordOrData);
   },
 
   urlPrefix: function(path, parentURL) {
