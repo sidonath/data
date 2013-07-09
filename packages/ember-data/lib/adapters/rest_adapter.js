@@ -2,6 +2,7 @@ require("ember-data/core");
 require('ember-data/system/adapter');
 
 require('ember-data/serializers/rest_serializer');
+require('ember-data/adapters/rest_adapter/url_builder');
 
 /**
   @module ember-data
@@ -110,6 +111,12 @@ var forEach = Ember.ArrayPolyfills.forEach;
 */
 DS.RESTAdapter = DS.Adapter.extend({
   defaultSerializer: '_rest',
+  urlBuilder: null,
+
+  init: function() {
+    this._super.apply(this, arguments);
+    set(this, 'urlBuilder', DS.URLBuilder.create({adapter: this}));
+  },
 
   /**
     Called by the store in order to fetch the JSON for a given
@@ -127,7 +134,7 @@ DS.RESTAdapter = DS.Adapter.extend({
     @returns Promise
   */
   find: function(store, type, id) {
-    return this.ajax(this.buildURL(type.typeKey, id), 'GET');
+    return this.ajax(get(this, 'urlBuilder').buildFindURL(type.typeKey, id), 'GET');
   },
 
   /**
@@ -152,7 +159,7 @@ DS.RESTAdapter = DS.Adapter.extend({
       query = { since: sinceToken };
     }
 
-    return this.ajax(this.buildURL(type.typeKey), 'GET', { data: query });
+    return this.ajax(get(this, 'urlBuilder').buildFindAllURL(type.typeKey), "GET", { data: query });
   },
 
   /**
@@ -174,7 +181,7 @@ DS.RESTAdapter = DS.Adapter.extend({
     @returns Promise
   */
   findQuery: function(store, type, query) {
-    return this.ajax(this.buildURL(type.typeKey), 'GET', { data: query });
+    return this.ajax(get(this, 'urlBuilder').buildFindQueryURL(type.typeKey), "GET", { data: query });
   },
 
   /**
@@ -214,7 +221,7 @@ DS.RESTAdapter = DS.Adapter.extend({
     @returns Promise
   */
   findMany: function(store, type, ids, owner) {
-    return this.ajax(this.buildURL(type.typeKey), 'GET', { data: { ids: ids } });
+    return this.ajax(get(this, 'urlBuilder').buildFindManyURL(type.typeKey), "GET", { data: { ids: ids } });
   },
 
   /**
@@ -250,7 +257,7 @@ DS.RESTAdapter = DS.Adapter.extend({
     var id   = get(record, 'id'),
         type = record.constructor.typeKey;
 
-    return this.ajax(this.urlPrefix(url, this.buildURL(type, id)), 'GET');
+    return this.ajax(this.urlPrefix(url, get(this, 'urlBuilder').buildFindHasManyURL(type, id, record)), 'GET');
   },
 
   /**
@@ -286,7 +293,7 @@ DS.RESTAdapter = DS.Adapter.extend({
     var id   = get(record, 'id'),
         type = record.constructor.typeKey;
 
-    return this.ajax(this.urlPrefix(url, this.buildURL(type, id)), 'GET');
+    return this.ajax(this.urlPrefix(url, get(this, 'urlBuilder').buildFindBelongsToURL(type, id, record)), 'GET');
   },
 
   /**
@@ -313,7 +320,7 @@ DS.RESTAdapter = DS.Adapter.extend({
 
     serializer.serializeIntoHash(data, type, record, { includeId: true });
 
-    return this.ajax(this.buildURL(type.typeKey), "POST", { data: data });
+    return this.ajax(get(this, 'urlBuilder').buildCreateURL(type.typeKey), "POST", { data: data });
   },
 
   /**
@@ -341,7 +348,7 @@ DS.RESTAdapter = DS.Adapter.extend({
 
     var id = get(record, 'id');
 
-    return this.ajax(this.buildURL(type.typeKey, id), "PUT", { data: data });
+    return this.ajax(get(this, 'urlBuilder').buildUpdateURL(type.typeKey, id, record), "PUT", { data: data });
   },
 
   /**
@@ -361,37 +368,11 @@ DS.RESTAdapter = DS.Adapter.extend({
   deleteRecord: function(store, type, record) {
     var id = get(record, 'id');
 
-    return this.ajax(this.buildURL(type.typeKey, id), "DELETE");
+    return this.ajax(get(this, 'urlBuilder').buildDeleteURL(type.typeKey, id, record), "DELETE");
   },
 
-  /**
-    Builds a URL for a given type and optional ID.
-
-    By default, it pluralizes the type's name (for example,
-    'post' becomes 'posts' and 'person' becomes 'people').
-
-    If an ID is specified, it adds the ID to the path generated
-    for the type, separated by a `/`.
-
-    @method buildURL
-    @param {String} type
-    @param {String} id
-    @returns String
-  */
   buildURL: function(type, id) {
-    var url = [],
-        host = get(this, 'host'),
-        prefix = this.urlPrefix();
-
-    if (type) { url.push(this.pathForType(type)); }
-    if (id) { url.push(id); }
-
-    if (prefix) { url.unshift(prefix); }
-
-    url = url.join('/');
-    if (!host && url) { url = '/' + url; }
-
-    return url;
+    return get(this, 'urlBuilder').buildURL(type, id);
   },
 
   urlPrefix: function(path, parentURL) {
